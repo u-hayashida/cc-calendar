@@ -14,6 +14,11 @@ Everything stays on your machine.
 - Pages on other websites cannot change your notes: the server accepts changes only as JSON
   from its own page.
 - It makes no network requests. The page loads no external scripts, fonts or analytics.
+- `cc-calendar events` only prints events. If you copy them to a calendar (for example with an
+  agent's Google Calendar connector), what leaves your machine is what the output holds: the
+  project name (the last part of the working directory), the git branch, the start and end times
+  of each active stretch, and the session ID. Session titles, prompts, transcripts and costs are
+  not in it.
 - Viewing a log never contacts another host. Images linked in a transcript (`![](https://…)` or
   an `<img>` tag) are not loaded; they show as a link you can open yourself. The page's
   Content-Security-Policy stops the browser from loading anything else from other sites.
