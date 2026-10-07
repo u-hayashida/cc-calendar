@@ -21,6 +21,7 @@ from .server import project_name
 from .store import Store
 
 MIN_EVENT_MS = 5 * 60_000
+MTIME_SLACK_MS = 24 * 60 * 60_000
 KEY_PREFIX = "cc-calendar:"
 SESSION_PREFIX = "session:"
 
@@ -35,6 +36,10 @@ def summary_of(s: SessionAcc) -> str:
 
 
 def rfc3339(ms: int) -> str:
+    # .astimezone() uses the system local timezone. This is intentional: the output
+    # is RFC 3339 with an explicit offset, which Google Calendar accepts regardless of
+    # which offset is used. CI running in UTC will produce "+00:00" instead of "+09:00",
+    # but the timestamps are equivalent.
     return datetime.fromtimestamp(ms / 1000).astimezone().isoformat(timespec="seconds")
 
 
@@ -85,9 +90,12 @@ def local_ms(d: date) -> int:
 
 
 def load_sessions(specs: list[str], since_ms: int) -> list[SessionAcc]:
-    """Sessions whose log was written to at or after `since_ms`.
+    """Sessions whose log was written to at or after `since_ms` (less a day of slack).
 
-    Older logs cannot hold activity in the window, so they are not read at all.
+    Older logs cannot hold activity in the window, so they are not read at all. Records are
+    appended as they happen, so a log's mtime is no earlier than its newest record, except
+    when the log was written on another machine whose clock runs ahead (a synced
+    --claude-dir); the slack covers that.
     """
     from .cli import claude_dirs
 
@@ -97,7 +105,7 @@ def load_sessions(specs: list[str], since_ms: int) -> list[SessionAcc]:
             continue
         for path in sorted(d.projects_dir.glob("*/*.jsonl")):
             try:
-                if path.stat().st_mtime * 1000 < since_ms:
+                if path.stat().st_mtime * 1000 < since_ms - MTIME_SLACK_MS:
                     continue
             except OSError:
                 continue
@@ -123,6 +131,9 @@ def events_main(argv: list[str]) -> None:
     parser.add_argument(
         "--until", type=day, default=today, help="last day, YYYY-MM-DD (default: today)"
     )
+    # Note: --until defaults to *today* independently of --since.
+    # If only --since is given (e.g. --since 2026-10-01), --until stays as today,
+    # which is likely the intended behaviour: "from a past date up to today".
     parser.add_argument(
         "--claude-dir",
         action="append",

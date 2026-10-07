@@ -90,6 +90,15 @@ def test_old_logs_are_not_read(claude_dir):
     assert "s-basic" not in sids and "s-sub" in sids
 
 
+def test_logs_written_just_before_since_are_read(claude_dir):
+    # A synced log from a machine whose clock runs ahead can look older than its records.
+    log = claude_dir / "projects" / PROJECT / "s-basic.jsonl"
+    hour_before = T0 / 1000 - 3600
+    os.utime(log, (hour_before, hour_before))
+    sids = {s.session_id for s in gcal.load_sessions([str(claude_dir)], T0)}
+    assert "s-basic" in sids
+
+
 def test_json_output(claude_dir, capsys):
     day = BASE.astimezone().date().isoformat()
     main(["events", "--json", "--claude-dir", str(claude_dir), "--since", day, "--until", day])
