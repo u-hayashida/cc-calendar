@@ -70,8 +70,16 @@ def claude_dirs(specs: list[str]) -> list[ClaudeDir]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["events"]:
+        from .gcal import events_main
+
+        events_main(argv[1:])
+        return
     parser = argparse.ArgumentParser(
-        prog="cc-calendar", description="Weekly calendar view of your Claude Code sessions."
+        prog="cc-calendar",
+        description="Weekly calendar view of your Claude Code sessions.",
+        epilog="Run `cc-calendar events --help` to list calendar events for your sessions.",
     )
     parser.add_argument("--port", type=int, default=0, help="port to listen on (default: any free)")
     parser.add_argument("--no-browser", action="store_true", help="do not open a browser")

@@ -76,6 +76,45 @@ Point `--notes` at another file to keep it somewhere else, such as a synced fold
 between machines; changes made to the file elsewhere are picked up. One file serves every
 `--claude-dir`. Notes stay in the file after Claude Code deletes a session's old log.
 
+### Calendar events
+
+`cc-calendar events` lists one calendar event per active stretch of your sessions (the same
+segments the calendar view draws), titled `[CC] project (branch)`. It contacts nothing: copy them
+to a calendar with an agent that has a Google Calendar connector, such as Claude Code with the
+claude.ai Google Calendar connector. `--json` prints them for that agent:
+
+```json
+{
+ "timeMin": "2026-10-07T00:00:00+09:00",
+ "timeMax": "2026-10-08T00:00:00+09:00",
+ "sessions": ["…session ids read…"],
+ "events": [
+  {
+   "key": "3f0c…",
+   "session_id": "…",
+   "summary": "[CC] cc-calendar (main)",
+   "start": "2026-10-07T10:02:11+09:00",
+   "end": "2026-10-07T10:41:30+09:00",
+   "description": "cc-calendar:3f0c…\nsession:…"
+  }
+ ]
+}
+```
+
+Put `description` on the event as is: its `key` lets a later run find the event again. The key
+stays the same while a stretch grows, so re-running updates the end time instead of adding a
+duplicate; a stretch split differently (another `--gap`) gets a new key, and the old event can
+be deleted. Delete an old event only if its session is in `sessions`, so events whose logs
+Claude Code has since removed are kept. `timeMin` and `timeMax` are the range to list existing
+events in. A stretch with a single message is shown as 5 minutes.
+
+| Option | Description |
+| --- | --- |
+| `--since DATE`, `--until DATE` | Days to list, `YYYY-MM-DD` in local time (default: today) |
+| `--gap MINUTES` | Idle time that splits a session into separate events (default 15) |
+| `--claude-dir [NAME=]PATH` | As for the viewer; repeat for several directories |
+| `--json` | Print JSON instead of a list |
+
 ### Full-text search
 
 Tick **Full text** next to the search box to also search what Claude wrote: assistant replies,
@@ -198,6 +237,8 @@ and makes no network requests; images linked in transcripts are shown as links, 
 [full-text search index](https://atinfinity.github.io/cc-calendar/features/#full-text-search), a cache built from your logs. Requests from other
 websites cannot change either. Commit hashes that do not appear in the
 logs are looked up with `git log` in the session's working directory.
+[`cc-calendar events`](#calendar-events) contacts nothing either; what you copy from its output
+to a calendar (project name, branch, active times and session ID) leaves your machine.
 
 ## Development
 
